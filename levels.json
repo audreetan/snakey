@@ -1,0 +1,102 @@
+{
+  "theme": {
+    "bg": [15, 15, 15],
+    "grid": [30, 30, 30],
+    "snake": [80, 200, 120],
+    "snake_head": [140, 230, 160],
+    "food": [220, 80, 80],
+    "wall": [120, 120, 140],
+    "text": [230, 230, 230]
+  },
+  "levels": [
+    {
+      "name": "Level 1: Open Field",
+      "grid_cols": 20,
+      "grid_rows": 20,
+      "fps": 12,
+      "wrap_walls": true,
+      "walls": [],
+      "snake_start": [10, 10],
+      "snake_direction": "right",
+      "snake_length": 3,
+      "score_to_advance": 5
+    },
+    {
+      "name": "Level 2: Walled Arena",
+      "grid_cols": 25,
+      "grid_rows": 25,
+      "fps": 13,
+      "wrap_walls": false,
+      "walls": [
+        { "type": "border" }
+      ],
+      "snake_start": [12, 12],
+      "snake_direction": "right",
+      "snake_length": 3,
+      "score_to_advance": 7
+    },
+    {
+      "name": "Level 3: Pillars",
+      "grid_cols": 25,
+      "grid_rows": 25,
+      "fps": 14,
+      "wrap_walls": false,
+      "walls": [
+        { "type": "border" },
+        { "type": "rect", "x": 6, "y": 6, "width": 3, "height": 3 },
+        { "type": "rect", "x": 16, "y": 6, "width": 3, "height": 3 },
+        { "type": "rect", "x": 6, "y": 16, "width": 3, "height": 3 },
+        { "type": "rect", "x": 16, "y": 16, "width": 3, "height": 3 }
+      ],
+      "snake_start": [12, 12],
+      "snake_direction": "right",
+      "snake_length": 3,
+      "score_to_advance": 10
+    },
+    {
+      "name": "Level 4: The Cross",
+      "grid_cols": 30,
+      "grid_rows": 30,
+      "fps": 15,
+      "wrap_walls": false,
+      "walls": [
+        { "type": "border" },
+        { "type": "rect", "x": 14, "y": 5, "width": 2, "height": 8 },
+        { "type": "rect", "x": 14, "y": 17, "width": 2, "height": 8 },
+        { "type": "rect", "x": 5, "y": 14, "width": 8, "height": 2 },
+        { "type": "rect", "x": 17, "y": 14, "width": 8, "height": 2 }
+      ],
+      "snake_start": [3, 3],
+      "snake_direction": "right",
+      "snake_length": 4,
+      "score_to_advance": 12,
+      "theme": {
+        "snake": [120, 180, 240],
+        "snake_head": [180, 220, 255]
+      }
+    },
+    {
+      "name": "Level 5: Tight Corridors",
+      "grid_cols": 30,
+      "grid_rows": 30,
+      "fps": 16,
+      "wrap_walls": false,
+      "walls": [
+        { "type": "border" },
+        { "type": "rect", "x": 5, "y": 5, "width": 1, "height": 20 },
+        { "type": "rect", "x": 24, "y": 5, "width": 1, "height": 20 },
+        { "type": "rect", "x": 10, "y": 10, "width": 10, "height": 1 },
+        { "type": "rect", "x": 10, "y": 19, "width": 10, "height": 1 }
+      ],
+      "snake_start": [14, 14],
+      "snake_direction": "right",
+      "snake_length": 3,
+      "score_to_advance": 15,
+      "theme": {
+        "wall": [200, 100, 80],
+        "snake": [240, 200, 100],
+        "snake_head": [255, 230, 140]
+      }
+    }
+  ]
+}
