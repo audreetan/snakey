@@ -21,22 +21,19 @@ DEFAULT_NUM_APPLES = 1
 MAX_APPLES = 15
 
 COLORS = {
-    "bg": (28, 42, 31),
-    "bg_dot": (38, 54, 42),
-    "snake_body": (63, 158, 78),
-    "snake_body_edge": (32, 90, 45),
-    "snake_head": (95, 195, 115),
-    "snake_eye": (245, 245, 245),
-    "snake_pupil": (20, 20, 20),
-    "apple": (217, 52, 43),
-    "apple_dark": (142, 31, 25),
-    "apple_shine": (245, 199, 195),
-    "apple_stem": (92, 58, 30),
-    "apple_leaf": (59, 139, 58),
-    "wall": (110, 110, 118),
-    "wall_edge": (60, 60, 68),
-    "text": (235, 235, 235),
-    "text_dim": (160, 160, 160),
+    "bg": (45, 69, 35),
+    "field_light": (170, 215, 81),
+    "field_dark": (162, 209, 73),
+    "snake": (74, 117, 44),
+    "snake_eye": (20, 20, 20),
+    "apple": (231, 71, 29),
+    "apple_dark": (179, 48, 21),
+    "apple_stem": (138, 95, 54),
+    "apple_leaf": (92, 139, 54),
+    "wall": (176, 176, 184),
+    "wall_edge": (118, 118, 126),
+    "text": (240, 240, 240),
+    "text_dim": (200, 200, 200),
     "select": (255, 215, 90),
     "panel": (0, 0, 0, 140),
 }
@@ -96,11 +93,16 @@ def cell_center_smooth(prev, cur, progress):
     )
 
 
-def draw_background(screen, cols, rows):
-    screen.fill(COLORS["bg"])
-    for x in range(CELL_SIZE, cols * CELL_SIZE, CELL_SIZE * 2):
-        for y in range(CELL_SIZE, rows * CELL_SIZE, CELL_SIZE * 2):
-            pygame.draw.circle(screen, COLORS["bg_dot"], (x, y), 2)
+def make_field_background(cols, rows):
+    surf = pygame.Surface((cols * CELL_SIZE, rows * CELL_SIZE))
+    for y in range(rows):
+        for x in range(cols):
+            color = COLORS["field_light"] if (x + y) % 2 == 0 else COLORS["field_dark"]
+            pygame.draw.rect(
+                surf, color,
+                pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE),
+            )
+    return surf
 
 
 def draw_walls(screen, walls):
@@ -113,20 +115,19 @@ def draw_walls(screen, walls):
 def draw_apple(screen, pos):
     cx = pos[0] * CELL_SIZE + CELL_SIZE // 2
     cy = pos[1] * CELL_SIZE + CELL_SIZE // 2 + 1
-    r = CELL_SIZE // 2 - 3
+    r = int(CELL_SIZE * 0.36)
     pygame.draw.circle(screen, COLORS["apple"], (cx, cy), r)
-    pygame.draw.circle(screen, COLORS["apple_dark"], (cx, cy), r, 1)
     pygame.draw.circle(
-        screen, COLORS["apple_shine"],
-        (cx - r // 3, cy - r // 3), max(2, r // 4),
+        screen, COLORS["apple_dark"],
+        (cx + r // 3, cy + r // 4), max(2, r // 3),
     )
     pygame.draw.line(
         screen, COLORS["apple_stem"],
-        (cx, cy - r + 1), (cx + 2, cy - r - 3), 2,
+        (cx, cy - r + 1), (cx + 2, cy - r - 4), 2,
     )
     leaf = [
         (cx + 2, cy - r - 1),
-        (cx + r // 2 + 4, cy - r - 2),
+        (cx + r, cy - r - 3),
         (cx + 2, cy - r + 3),
     ]
     pygame.draw.polygon(screen, COLORS["apple_leaf"], leaf)
@@ -145,43 +146,62 @@ def draw_snake(screen, snake, prev_snake, direction, progress):
         for i in range(len(snake))
     ]
 
-    body_radius = CELL_SIZE // 2 - 3
+    color = COLORS["snake"]
+    body_thickness = int(CELL_SIZE * 0.82)
+    half = body_thickness // 2
+    corner_radius = body_thickness // 3
 
+    # Bridges between consecutive segments (axis-aligned rects)
     for i in range(len(positions) - 1):
         a, b = positions[i], positions[i + 1]
-        if abs(a[0] - b[0]) <= CELL_SIZE and abs(a[1] - b[1]) <= CELL_SIZE:
-            pygame.draw.line(
-                screen, COLORS["snake_body"],
-                a, b, body_radius * 2,
-            )
-
-    for i, pos in enumerate(positions):
-        if i == 0:
+        if abs(a[0] - b[0]) > CELL_SIZE * 1.5 or abs(a[1] - b[1]) > CELL_SIZE * 1.5:
             continue
-        pygame.draw.circle(
-            screen, COLORS["snake_body"],
-            (int(pos[0]), int(pos[1])), body_radius,
-        )
+        if abs(a[0] - b[0]) >= abs(a[1] - b[1]):
+            x_min, x_max = sorted([a[0], b[0]])
+            y_mid = (a[1] + b[1]) / 2
+            rect = pygame.Rect(
+                int(x_min), int(y_mid - half),
+                int(x_max - x_min), body_thickness,
+            )
+        else:
+            y_min, y_max = sorted([a[1], b[1]])
+            x_mid = (a[0] + b[0]) / 2
+            rect = pygame.Rect(
+                int(x_mid - half), int(y_min),
+                body_thickness, int(y_max - y_min),
+            )
+        pygame.draw.rect(screen, color, rect)
 
+    # Square caps at each interior segment center (fills corner gaps cleanly)
+    for i, pos in enumerate(positions):
+        if i == 0 or i == len(positions) - 1:
+            continue
+        rect = pygame.Rect(0, 0, body_thickness, body_thickness)
+        rect.center = (int(pos[0]), int(pos[1]))
+        pygame.draw.rect(screen, color, rect)
+
+    # Rounded head and tail
     hx, hy = positions[0]
-    head_r = body_radius + 2
-    pygame.draw.circle(screen, COLORS["snake_head"], (int(hx), int(hy)), head_r)
-    pygame.draw.circle(screen, COLORS["snake_body_edge"], (int(hx), int(hy)), head_r, 1)
+    head_rect = pygame.Rect(0, 0, body_thickness, body_thickness)
+    head_rect.center = (int(hx), int(hy))
+    pygame.draw.rect(screen, color, head_rect, border_radius=corner_radius)
 
+    if len(positions) >= 2:
+        tx, ty = positions[-1]
+        tail_rect = pygame.Rect(0, 0, body_thickness, body_thickness)
+        tail_rect.center = (int(tx), int(ty))
+        pygame.draw.rect(screen, color, tail_rect, border_radius=corner_radius)
+
+    # Eyes — two black dots facing the direction of travel
     dx, dy = direction
     perp = (-dy, dx)
-    eye_forward = head_r // 3
-    eye_side = head_r // 2
-    eye_r = max(2, head_r // 4)
-    pupil_r = max(1, eye_r // 2)
+    eye_forward = body_thickness // 5
+    eye_side = body_thickness // 4
+    eye_r = max(2, body_thickness // 9)
     for sign in (-1, 1):
         ecx = hx + dx * eye_forward + perp[0] * sign * eye_side
         ecy = hy + dy * eye_forward + perp[1] * sign * eye_side
         pygame.draw.circle(screen, COLORS["snake_eye"], (int(ecx), int(ecy)), eye_r)
-        pygame.draw.circle(
-            screen, COLORS["snake_pupil"],
-            (int(ecx + dx * pupil_r), int(ecy + dy * pupil_r)), pupil_r,
-        )
 
 
 def draw_hud_bar(screen, text, font):
@@ -333,6 +353,7 @@ def play(level, settings, hud_label):
 def _play_loop(state, level, settings, hud_label, screen, clock, font, big_font, sub_font):
     cols = level["grid_cols"]
     rows = level["grid_rows"]
+    field_bg = make_field_background(cols, rows)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -349,7 +370,7 @@ def _play_loop(state, level, settings, hud_label, screen, clock, font, big_font,
 
         state.maybe_tick(settings.num_apples)
 
-        draw_background(screen, cols, rows)
+        screen.blit(field_bg, (0, 0))
         draw_walls(screen, state.walls)
         for food in state.foods:
             draw_apple(screen, food)
